@@ -40,6 +40,8 @@ ros-static-linux-amd64: ros-static-cli-amd64 ros-static-engine ros-base## create
 
 ros-static-linux-arm64: ros-static-cli-arm64 ros-static-engine ros-base## create tgz with linux arm64 client and server
 
+ros-static-linux-mips64el: ros-static-cli-mips64el ros-static-engine ros-base## create tgz with linux mips64el client and server
+
 hash_files:
 	@echo "Hashing directory $(DIR_TO_HASH)"
 	$(HASH_CMD) "$(DIR_TO_HASH)"
@@ -67,9 +69,14 @@ static-cli:
 static-cli-arm64:
 	$(MAKE) -C $(CLI_DIR) -f docker.Makefile VERSION=$(VERSION) build_arm64
 
+static-cli-mips64el:
+	$(MAKE) -C $(CLI_DIR) -f docker.Makefile VERSION=$(VERSION) build_mips64el
+
 ros-static-cli-amd64: static-cli
 
 ros-static-cli-arm64: static-cli-arm64
+
+ros-static-cli-mips64el: static-cli-mips64el
 
 static-engine:
 	$(MAKE) -C $(ENGINE_DIR) binary
