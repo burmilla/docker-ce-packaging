@@ -1,0 +1,80 @@
+name: release
+
+on:
+  workflow_dispatch:
+    inputs:
+      engine_version:
+        description: 'Docker engine version'
+        default: '25.0.14'
+        required: true
+      cli_version:
+        description: 'Docker CLI version'
+        default: '25.0.7'
+        required: true
+      containerd_version:
+        description: 'containerd version'
+        default: '1.7.28'
+        required: true
+      runc_version:
+        description: 'runc version'
+        default: '1.3.0'
+        required: true
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          path: go/docker-ce-packaging
+
+      - name: Checkout moby/moby
+        uses: actions/checkout@v4
+        with:
+          repository: 'moby/moby'
+          path: go/src/github.com/docker/docker
+          ref: v${{ github.event.inputs.engine_version }}
+
+      - name: Checkout docker/cli
+        uses: actions/checkout@v4
+        with:
+          repository: 'docker/cli'
+          path: go/src/github.com/docker/cli
+          ref: v${{ github.event.inputs.cli_version }}
+
+      - name: Install github-release
+        run: |
+          sudo wget https://github.com/github-release/github-release/releases/download/v0.11.0/linux-amd64-github-release.bz2 -O /usr/local/bin/github-release.bz2
+          sudo bunzip2 /usr/local/bin/github-release.bz2
+          sudo chmod 0755 /usr/local/bin/github-release
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Build
+        run: |
+          git tag v${{ github.event.inputs.engine_version }}
+          git checkout tags/v${{ github.event.inputs.engine_version }} -b v${{ github.event.inputs.engine_version }}
+          export VERSION=${{ github.event.inputs.engine_version }}
+          export CONTAINERD_VERSION=v${{ github.event.inputs.containerd_version }}
+          export RUNC_VERSION=v${{ github.event.inputs.runc_version }}
+          export TARGETPLATFORM=linux/amd64
+          export DOCKER_ENGINE_REF=v${{ github.event.inputs.engine_version }}
+          export DOCKER_CLI_REF=v${{ github.event.inputs.cli_version }}
+          make static
+        working-directory: go/docker-ce-packaging
+        env:
+          GOPATH: go
+
+      - name: Release
+        run: |
+          github-release release --user burmilla --repo docker-ce-packaging --tag v${{ github.event.inputs.engine_version }}
+          echo "echo Waiting 30 seconds after release creation to make sure that GitHub is ready for uploads"
+          sleep 30s
+          github-release upload --user burmilla --repo docker-ce-packaging --tag v${{ github.event.inputs.engine_version }} --file ./static/build/linux/docker-${{ github.event.inputs.engine_version }}.tgz --name docker-${{ github.event.inputs.engine_version }}.tgz
+        working-directory: go/docker-ce-packaging
+        env:
+          GITHUB_TOKEN: ${{ secrets.OS_RELEASE_TOKEN }}
