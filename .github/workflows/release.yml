@@ -5,7 +5,7 @@ on:
     inputs:
       engine_version:
         description: 'Docker engine version'
-        default: '25.0.17'
+        default: '25.0.18'
         required: true
       cli_version:
         description: 'Docker CLI version'
