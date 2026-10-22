@@ -5,7 +5,7 @@ on:
     inputs:
       engine_version:
         description: 'Docker engine version'
-        default: '25.0.18'
+        default: '25.0.19'
         required: true
       cli_version:
         description: 'Docker CLI version'
@@ -13,7 +13,7 @@ on:
         required: true
       containerd_version:
         description: 'containerd version'
-        default: '1.7.34'
+        default: '1.7.35'
         required: true
       runc_version:
         description: 'runc version'
